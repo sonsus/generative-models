@@ -12,6 +12,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 import scipy.ndimage.interpolation
 
 
+
 mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
 mb_size = 32
 z_dim = 10
@@ -41,6 +42,7 @@ def plot(samples):
 
     return fig
 
+#G_AB and G_BA are exact copy of each other when seeing its architecture.
 
 G_AB = torch.nn.Sequential(
     torch.nn.Linear(X_dim, h_dim),
@@ -105,7 +107,7 @@ def sample_x(X, size):
 
 
 # Training
-for it in range(1000000):
+for it in range(1000000): #this is ~20 epoch assumed full mnist size: ~ 50k imgs
     # Sample data from both domains
     X_A = sample_x(X_train1, mb_size)
     X_B = sample_x(X_train2, mb_size)
@@ -137,8 +139,8 @@ for it in range(1000000):
     X_ABA = G_BA(X_AB)
 
     L_adv_B = -torch.mean(log(D_B_fake))
-    L_recon_A = torch.mean(torch.sum((X_A - X_ABA)**2, 1))
-    L_G_AB = L_adv_B + L_recon_A
+    L_recon_A = torch.mean(torch.sum((X_A - X_ABA)**2, 1)) #l2 norm of diff(X_A, X_ABA)
+    L_G_AB = L_adv_B + L_recon_A #fooling D (L_adv_B) + cyclic reconstruction being confirmed (L_recon_A) --> G_AB is well trained 
 
     # Generator BA
     X_BA = G_BA(X_B)

@@ -12,16 +12,23 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 
 mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
-mb_size = 32
+mb_size = 32 # mini batch size
 z_dim = 10
-X_dim = mnist.train.images.shape[1]
-y_dim = mnist.train.labels.shape[1]
+X_dim = mnist.train.images.shape[1] # 28 * 28 flattened vector
+y_dim = mnist.train.labels.shape[1] # one-hot encoding of labels (0 thru 9)
 h_dim = 128
 cnt = 0
 d_step = 3
 lr = 1e-3
+print("---------------data dim----------------")
+print("\t X_dim={}".format(X_dim))
+print("\t y_dim={}".format(y_dim))
+print("---------------------------------------")
 
 
+
+#G: relu - sigmoid
+#D: relu 
 G = torch.nn.Sequential(
     torch.nn.Linear(z_dim, h_dim),
     torch.nn.ReLU(),
@@ -46,11 +53,15 @@ G_solver = optim.Adam(G.parameters(), lr=lr)
 D_solver = optim.Adam(D.parameters(), lr=lr)
 
 
+
 for it in range(1000000):
+    # scheduled D training 
     for _ in range(d_step):
         # Sample data
         z = Variable(torch.randn(mb_size, z_dim))
-        X, _ = mnist.train.next_batch(mb_size)
+        X, _ = mnist.train.next_batch(mb_size)  
+            # returns tuple: tuple[0]=np.ndarray(mb_size rows of X=flatten mnist vector)
+            #                tuple[1]=np.ndarray(mb_size rows of Y=one-hot labels )
         X = Variable(torch.from_numpy(X))
 
         # Dicriminator
@@ -58,7 +69,7 @@ for it in range(1000000):
         D_real = D(X)
         D_fake = D(G_sample)
 
-        D_loss = 0.5 * (torch.mean((D_real - 1)**2) + torch.mean(D_fake**2))
+        D_loss = 0.5 * (torch.mean((D_real - 1)**2) + torch.mean(D_fake**2)) # least square D loss
 
         D_loss.backward()
         D_solver.step()
@@ -70,7 +81,7 @@ for it in range(1000000):
     G_sample = G(z)
     D_fake = D(G_sample)
 
-    G_loss = 0.5 * torch.mean((D_fake - 1)**2)
+    G_loss = 0.5 * torch.mean((D_fake - 1)**2) # least square G loss
 
     G_loss.backward()
     G_solver.step()
@@ -101,3 +112,13 @@ for it in range(1000000):
         plt.savefig('out/{}.png'.format(str(cnt).zfill(3)), bbox_inches='tight')
         cnt += 1
         plt.close(fig)
+
+
+        #with open("nextbatch.txt", "w") as f:
+        #    np.set_printoptions(threshold=np.inf)
+        #    f.write(str(mnist.train.next_batch(mb_size)[0]))
+        #    f.write(str(mnist.train.next_batch(mb_size)[1]))
+        #    f.write("\n\n")
+        #    f.write(str(mnist.train.next_batch(mb_size)[0].shape))
+        #    f.write(str(mnist.train.next_batch(mb_size)[1].shape))
+        #exit()
